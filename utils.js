@@ -12,9 +12,11 @@
     s.src = "https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"
     document.head.appendChild(s)
   }
+
+  const sleep = (t) => new Promise(resolve => setTimeout(resolve, t))
   
   while (typeof Tesseract === "undefined" || typeof CryptoJS === "undefined") {
-    await new Promise(resolve => setTimeout(resolve, 300))
+    await sleep(300)
   }
 
   const {createWorker} = Tesseract;
@@ -22,7 +24,43 @@
   await worker.loadLanguage('eng');
   await worker.initialize('eng');
   
-  const sleep = (t) => new Promise(resolve => setTimeout(resolve, t))
+  const askfor = (options) => {
+    return new Promise(resolve => {
+      const p = document.createElement("div")
+      p.style = "position: absolute; background-color: #888; opacity: 0.3; z-index: 99999; left: 0; top: 0; width: 100%; height: 100vh;"
+      document.body.appendChild(p)
+      const div = document.createElement("div")
+      div.style = "position: absolute; z-index: 199999; left: 0; top: 0; width: 100%; text-align: center;"
+      options.data.forEach(e => {
+        const ele = document.createElement("button")
+        ele.style = "font-size: 8em; margin: 5px;"
+        ele.onclick = (evt) => {
+          document.body.removeChild(p)
+          document.body.removeChild(div)
+          resolve(e)
+        }
+        ele.innerText = e
+        div.appendChild(ele);
+      })
+      document.body.appendChild(div)
+    });
+  }
+
+  const visitReact = (c, name, propName) => {
+    const s = c.stateNode
+    if (s && s.hasOwnProperty(name) && s[name] && s[name].hasOwnProperty(propName)) {
+      return c.stateNode[name]
+    }
+    let p = c.child
+    while (p) {
+      const r = visitReact(p, name, propName)
+      if (r)
+        return r
+      p = p.sibling
+    }
+    return null
+  }
+
   const buildJWTForm = async (data) => {       
     async function sha256(message, salt) {
       const hash = CryptoJS.HmacSHA256(message, salt)
@@ -51,10 +89,29 @@
       });
     return await r.json()
   }
+
+  const verify = async (ctx) => {
+    console.log('verify')
+    const { iss, formInstanceId, plateNumber, verifyCode, appointmentDate } = ctx
+    const data = {appointmentType:"passBooking",formInstanceId,direction:"S",plateNumber,appointmentDate,verifyCode,iss,issType:"web",appType:"web"}
+    return await makeRequest("/before/sys/appointment/validationPassBooking", data)
+  }
+  
+  const book = async () => {
+    console.log('book')
+    const { iss, formInstanceId, plateNumber, verifyCode, appointmentDate } = ctx
+    const data = {appointmentType:"passBooking",formInstanceId,direction:"S",plateNumber,appointmentDate,verifyCode,iss,issType:"web",appType:"web"}
+    return await makeRequest("/before/sys/appointment/createPassAppointment", data)
+  }
   
   window.MacauCarBookUtils = {
+    worker,
     sleep,
+    askfor,
+    visitReact,
     buildJWTForm,
-    makeRequest
+    makeRequest,
+    verify,
+    book
   }
 })();
