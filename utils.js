@@ -61,7 +61,7 @@
     return null
   }
 
-  const buildJWTForm = async (data) => {       
+  const buildJWT = async (data) => {       
     async function sha256(message, salt) {
       const hash = CryptoJS.HmacSHA256(message, salt)
       return CryptoJS.enc.Base64.stringify(hash)
@@ -72,46 +72,90 @@
     const payload = btoa(JSON.stringify(data))
     const sign = await sha256(`${header}.${payload}`, salt)
     const jwt = `${header}.${payload}.${sign}`
+    return jwt;
+  }
+
+  const buildJWTForm = async (data) => {       
+    const jwt = await buildJWT(data);
     const form = new URLSearchParams();
     form.append("jwt", jwt);
     form.append("_method", "POST");
     return form
   }
-  
-  const makeRequest = async (url, data) => {
+
+  const makePostRequest = async (ctx, url, data) => {
     const r = await fetch(url, {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "x-access-token": accessToken
+          "x-access-token": ctx.accessToken
         },
-        body: await buildJWTForm({ appointmentType: "passBooking", direction: "S", iss, issType: "web", appType: "web" }),
+        body: await buildJWTForm(data),
         method: "POST",
       });
     return await r.json()
   }
 
-  const verify = async (ctx) => {
-    console.log('verify')
-    const { iss, formInstanceId, plateNumber, verifyCode, appointmentDate } = ctx
-    const data = {appointmentType:"passBooking",formInstanceId,direction:"S",plateNumber,appointmentDate,verifyCode,iss,issType:"web",appType:"web"}
-    return await makeRequest("/before/sys/appointment/validationPassBooking", data)
+  const makeGetRequest = async (ctx, url, data) => {
+    const jwt = encodeURIComponent(await buildJWT(data));
+    const r = await fetch(`${url}?jwt=${jwt}`, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          "x-access-token": ctx.accessToken
+        },
+        method: "GET",
+      });
+    return await r.json()
   }
   
-  const book = async () => {
-    console.log('book')
-    const { iss, formInstanceId, plateNumber, verifyCode, appointmentDate } = ctx
-    const data = {appointmentType:"passBooking",formInstanceId,direction:"S",plateNumber,appointmentDate,verifyCode,iss,issType:"web",appType:"web"}
-    return await makeRequest("/before/sys/appointment/createPassAppointment", data)
+  const createContext = (payload) => {
+    return {
+      ...payload,
+      accessToken: JSON.parse(localStorage.getItem("com.macao.token")).token,
+      iss: localStorage.getItem("com.macao.iss")
+    };
   }
+
+  const getPassQualification = async (ctx) => {
+    const d = await makePostRequest(ctx, "/before/sys/appointment/getPassQualification", {
+      iss: ctx.iss,
+      issType: "web",
+      appType: "web"
+    });
+    const formInstance = d.responseResult.formInstanceList[0].formInstance;
+	const formInstanceId = formInstance.formInstanceId
+    const plateNumber = formInstance.plateNumber;
+    console.log(formInstanceId);
+    console.log(plateNumber)
+    ctx.formInstanceId = formInstanceId;
+    ctx.plateNumber = plateNumber;
+    return d;
+  }
+  
+  // const verify = async (ctx) => {
+  //   console.log('verify')
+  //   const { iss, formInstanceId, plateNumber, verifyCode, appointmentDate } = ctx
+  //   const data = {appointmentType:"passBooking",formInstanceId,direction:"S",plateNumber,appointmentDate,verifyCode,iss,issType:"web",appType:"web"}
+  //   return await makePostRequest(ctx, "/before/sys/appointment/validationPassBooking", data)
+  // }
+  
+  // const book = async () => {
+  //   console.log('book')
+  //   const { iss, formInstanceId, plateNumber, verifyCode, appointmentDate } = ctx
+  //   const data = {appointmentType:"passBooking",formInstanceId,direction:"S",plateNumber,appointmentDate,verifyCode,iss,issType:"web",appType:"web"}
+  //   return await makePostRequest(ctx, "/before/sys/appointment/createPassAppointment", data)
+  // }
   
   window.MacauCarBookUtils = {
     worker,
     sleep,
     askfor,
     visitReact,
+    buildJWT,
     buildJWTForm,
-    makeRequest,
-    verify,
-    book
+    makePostRequest,
+    createContext,
+    getPassQualification,
+    // verify,
+    // book
   }
 })();
