@@ -144,6 +144,19 @@
   //   const data = {appointmentType:"passBooking",formInstanceId,direction:"S",plateNumber,appointmentDate,verifyCode,iss,issType:"web",appType:"web"}
   //   return await makePostRequest(ctx, "/before/sys/appointment/createPassAppointment", data)
   // }
+
+  const enableCalendar = () => {
+    const date = new Date()
+    date.setDate(date.getDate()+31)
+    const appointmentDateRef = date.toISOString().slice(0, 10)
+    const appointmentDate = Math.floor(Date.parse(appointmentDateRef + " 00:00:00 +0800") / 1000)
+    const sdl = visitReact(document.getElementById("root")._reactRootContainer._internalRoot.current, "state", "appointmentDateList");
+    console.log(sdl.appointmentDateList);
+    sdl.appointmentDateList = [
+      ...sdl.appointmentDateList.map(e => { return {...e, applyNum:"1999",isFull:false}}),
+      { quota: "2000", applyNum: "0", isFull: false, appointmentDate: `${appointmentDate}`, appointmentDateRef }
+    ];
+  }
   
   window.MacauCarBookUtils = {
     worker,
@@ -156,6 +169,7 @@
     createContext,
     getPassQualification,
     // verify,
-    // book
+    // book,
+    enableCalendar,
   }
 })();
