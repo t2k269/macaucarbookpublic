@@ -45,20 +45,25 @@
       document.body.appendChild(div)
     });
   }
-
-  const visitReact = (c, name, propName) => {
+	
+  const visitReactImpl = (c, name, propName) => {
     const s = c.stateNode
     if (s && s.hasOwnProperty(name) && s[name] && s[name].hasOwnProperty(propName)) {
       return c.stateNode[name]
     }
     let p = c.child
     while (p) {
-      const r = visitReact(p, name, propName)
+      const r = visitReactImpl(p, name, propName)
       if (r)
         return r
       p = p.sibling
     }
     return null
+  }
+
+  const visitReact = (c, name, propName) => {
+    const a = typeof c === "string" ? document.getElementById(c)._reactRootContainer._internalRoot.current : c;
+    return visitReactImpl(a, name, propName);
   }
 
   const buildJWT = async (data) => {       
