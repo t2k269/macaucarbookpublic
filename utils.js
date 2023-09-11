@@ -155,12 +155,15 @@
     date.setDate(date.getDate()+31)
     const appointmentDateRef = date.toISOString().slice(0, 10)
     const appointmentDate = Math.floor(Date.parse(appointmentDateRef + " 00:00:00 +0800") / 1000)
-    const sdl = visitReact(document.getElementById("root")._reactRootContainer._internalRoot.current, "state", "appointmentDateList");
+    const sdl = visitReact("root", "state", "appointmentDateList");
     console.log(sdl.appointmentDateList);
     sdl.appointmentDateList = [
       ...sdl.appointmentDateList.map(e => { return {...e, applyNum:"1999",isFull:false}}),
       { quota: "2000", applyNum: "0", isFull: false, appointmentDate: `${appointmentDate}`, appointmentDateRef }
     ];
+    const a = visitReact("root", "props", "dateCellRender");
+    a.disabledDate = (t) => false
+    a.getListData = (t) => [{ currentDateAllNum: 0, currentDateUseNum: 0, currentDateSurplus: 0, isFull: false }];
   }
   
   window.MacauCarBookUtils = {
