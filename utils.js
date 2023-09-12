@@ -173,6 +173,7 @@
     visitReact,
     buildJWT,
     buildJWTForm,
+    makeGetRequest,
     makePostRequest,
     createContext,
     getPassQualification,
