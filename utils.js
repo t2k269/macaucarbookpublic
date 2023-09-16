@@ -45,6 +45,28 @@
       document.body.appendChild(div)
     });
   }
+
+  const currentMinute = () => {
+    return parseInt(new Date().toISOString().substring(14,16))
+  }
+  const waitUntilMinute = async (targetMin) => {
+    let minutes = currentMinute();
+    while (minutes < targetMin || minutes - targetMin > 5) {
+      console.log(`Waiting for ${targetMin}`)
+      await sleep(1000)
+      minutes = currentMinute()
+    }
+    console.log(`Target min reached`)
+  }
+  const waitForTokenChange = async () => {
+    const getAccessToken = () => JSON.parse(localStorage.getItem("com.macao.token")).token
+    console.log("Waiting for token change...")
+    const oldAccessToken = getAccessToken()
+    do {
+      await new Promise(resolve => setTimeout(resolve, 100))
+    } while (getAccessToken() === oldAccessToken)
+    console.log(`Token changed to ${getAccessToken()}`)
+  }
 	
   const visitReactImpl = (c, name, propName) => {
     const s = c.stateNode
