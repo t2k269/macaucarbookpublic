@@ -31,13 +31,13 @@
       document.body.appendChild(p)
       const div = document.createElement("div")
       div.style = "position: absolute; z-index: 199999; left: 0; top: 0; width: 100%; text-align: center;"
-      options.data.forEach(e => {
+      options.data.forEach((e, i) => {
         const ele = document.createElement("button")
         ele.style = "font-size: 8em; margin: 5px;"
         ele.onclick = (evt) => {
           document.body.removeChild(p)
           document.body.removeChild(div)
-          resolve(e)
+          resolve(i)
         }
         ele.innerText = e
         div.appendChild(ele);
