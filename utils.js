@@ -192,6 +192,7 @@
     worker,
     sleep,
     askfor,
+    currentMinute, waitUntilMinute, waitForTokenChange,
     visitReact,
     buildJWT,
     buildJWTForm,
